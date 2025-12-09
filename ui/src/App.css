@@ -220,6 +220,15 @@
   background-color: #1e40af;
 }
 
+.add-to-cart-btn:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.add-to-cart-btn:disabled:hover {
+  background-color: #9ca3af;
+}
+
 /* 장바구니 섹션 */
 .cart-section {
   background-color: #f9fafb;
@@ -400,16 +409,232 @@
   background-color: #1e40af;
 }
 
-/* 관리자 화면 플레이스홀더 */
-.admin-placeholder {
-  text-align: center;
-  padding: 4rem 2rem;
+/* 관리자 화면 */
+.admin-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.admin-section {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0 0 1.5rem 0;
+  color: #111827;
+}
+
+/* 관리자 대시보드 통계 */
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.stat-item {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.875rem;
   color: #6b7280;
 }
 
-.admin-placeholder h2 {
+.stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #2563eb;
+}
+
+/* 재고 현황 */
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.inventory-card {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.inventory-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.inventory-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
   color: #111827;
-  margin-bottom: 1rem;
+}
+
+.inventory-stock-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.inventory-stock {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.inventory-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-normal {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-out {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.inventory-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.stock-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #2563eb;
+  background-color: white;
+  color: #2563eb;
+  border-radius: 4px;
+  font-size: 1.25rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.stock-btn:hover {
+  background-color: #eff6ff;
+}
+
+.stock-btn:active {
+  background-color: #dbeafe;
+}
+
+/* 주문 현황 */
+.no-orders {
+  color: #6b7280;
+  text-align: center;
+  padding: 2rem;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.order-item {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.order-time {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.order-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.order-item-name {
+  font-size: 1rem;
+  color: #111827;
+}
+
+.order-amount {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #2563eb;
+  margin-top: 0.25rem;
+}
+
+.order-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.order-action-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.order-action-btn:hover {
+  background-color: #1d4ed8;
+}
+
+.order-action-btn.complete {
+  background-color: #10b981;
+}
+
+.order-action-btn.complete:hover {
+  background-color: #059669;
 }
 
 /* 반응형 디자인 */
@@ -443,5 +668,27 @@
 
   .cart-summary {
     min-width: 100%;
+  }
+
+  .dashboard-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .inventory-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .order-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .order-actions {
+    width: 100%;
+  }
+
+  .order-action-btn {
+    flex: 1;
   }
 }
