@@ -55,6 +55,13 @@ function App() {
 
   // 메뉴를 장바구니에 추가
   const addToCart = (menu, options) => {
+    // 재고 확인
+    const currentMenu = menus.find(m => m.id === menu.id)
+    if (!currentMenu || currentMenu.stock === 0) {
+      alert('품절된 메뉴입니다.')
+      return
+    }
+
     // 옵션에 따른 추가 가격 계산
     let additionalPrice = 0
     if (options.addShot) additionalPrice += 500
@@ -76,7 +83,12 @@ function App() {
     )
 
     if (existingItemIndex !== -1) {
-      // 같은 항목이 있으면 수량만 증가
+      // 같은 항목이 있으면 수량만 증가 (재고 확인)
+      const existingItem = cart[existingItemIndex]
+      if (existingItem.quantity >= currentMenu.stock) {
+        alert(`재고가 부족합니다. (현재 재고: ${currentMenu.stock}개)`)
+        return
+      }
       setCart(cart.map((item, index) => 
         index === existingItemIndex
           ? { ...item, quantity: item.quantity + 1 }
@@ -105,6 +117,18 @@ function App() {
 
   // 수량 증가
   const increaseQuantity = (itemId) => {
+    const cartItem = cart.find(item => item.id === itemId)
+    if (!cartItem) return
+
+    const currentMenu = menus.find(m => m.id === cartItem.menuId)
+    if (!currentMenu) return
+
+    // 재고 확인
+    if (cartItem.quantity >= currentMenu.stock) {
+      alert(`재고가 부족합니다. (현재 재고: ${currentMenu.stock}개)`)
+      return
+    }
+
     setCart(cart.map(item => 
       item.id === itemId 
         ? { ...item, quantity: item.quantity + 1 }
@@ -131,6 +155,22 @@ function App() {
       return
     }
 
+    // 재고 검증
+    const stockIssues = []
+    cart.forEach(item => {
+      const menu = menus.find(m => m.id === item.menuId)
+      if (!menu) {
+        stockIssues.push(`${item.name}: 메뉴를 찾을 수 없습니다.`)
+      } else if (menu.stock < item.quantity) {
+        stockIssues.push(`${item.name}: 재고 부족 (요청: ${item.quantity}개, 재고: ${menu.stock}개)`)
+      }
+    })
+
+    if (stockIssues.length > 0) {
+      alert(`주문할 수 없습니다:\n${stockIssues.join('\n')}`)
+      return
+    }
+
     // 주문 생성
     const orderItems = cart.map(item => ({
       menuId: item.menuId,
@@ -150,15 +190,20 @@ function App() {
 
     setOrders([...orders, newOrder])
     
-    // 재고 차감
-    cart.forEach(item => {
-      setMenus(prevMenus => 
-        prevMenus.map(menu => 
-          menu.id === item.menuId 
-            ? { ...menu, stock: Math.max(0, menu.stock - item.quantity) }
-            : menu
-        )
-      )
+    // 재고 일괄 차감 (성능 개선)
+    setMenus(prevMenus => {
+      const stockMap = new Map()
+      cart.forEach(item => {
+        const current = stockMap.get(item.menuId) || 0
+        stockMap.set(item.menuId, current + item.quantity)
+      })
+
+      return prevMenus.map(menu => {
+        const quantityToDeduct = stockMap.get(menu.id) || 0
+        return quantityToDeduct > 0
+          ? { ...menu, stock: Math.max(0, menu.stock - quantityToDeduct) }
+          : menu
+      })
     })
 
     alert(`주문이 완료되었습니다!\n총 금액: ${totalAmount.toLocaleString()}원`)
@@ -309,12 +354,15 @@ function MenuCard({ menu, onAddToCart, stock }) {
             <span>시럽 추가 (+0원)</span>
           </label>
         </div>
+        {stock === 0 && (
+          <div className="menu-out-of-stock">품절</div>
+        )}
         <button 
           className="add-to-cart-btn" 
           onClick={handleAddToCart}
           disabled={stock === 0}
         >
-          {stock === 0 ? '품절' : '담기'}
+          담기
         </button>
       </div>
     </div>
@@ -481,7 +529,11 @@ function AdminDashboard({ menus, orders, onUpdateStock, onUpdateOrderStatus }) {
           <div className="orders-list">
             {activeOrders.map(order => {
               const orderDate = new Date(order.date)
-              const dateStr = `${orderDate.getMonth() + 1}월 ${orderDate.getDate()}일 ${orderDate.getHours()}:${String(orderDate.getMinutes()).padStart(2, '0')}`
+              const month = orderDate.getMonth() + 1
+              const day = orderDate.getDate()
+              const hours = orderDate.getHours()
+              const minutes = String(orderDate.getMinutes()).padStart(2, '0')
+              const dateStr = `${month}월 ${day}일 ${hours}:${minutes}`
               
               return (
                 <div key={order.id} className="order-item">
