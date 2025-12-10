@@ -7,12 +7,15 @@ let dbConfig;
 
 if (process.env.DATABASE_URL) {
   // Render.com의 Internal Database URL 사용
+  // Render PostgreSQL은 SSL 연결을 요구합니다
   dbConfig = {
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ssl: {
+      rejectUnauthorized: false // Render.com의 자체 서명 인증서를 허용
+    },
     max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: 10000, // Render에서는 연결 시간을 늘림
   };
 } else {
   // 개별 환경 변수 사용 (로컬 개발)
@@ -29,6 +32,13 @@ if (process.env.DATABASE_URL) {
   // 비밀번호가 설정되어 있고 빈 문자열이 아닐 때만 추가
   if (process.env.DB_PASSWORD && process.env.DB_PASSWORD.trim() !== '') {
     dbConfig.password = process.env.DB_PASSWORD;
+  }
+  
+  // 로컬 개발 환경에서도 SSL이 필요한 경우 (예: Render External Database)
+  if (process.env.DB_SSL === 'true' || process.env.NODE_ENV === 'production') {
+    dbConfig.ssl = {
+      rejectUnauthorized: false
+    };
   }
 }
 
