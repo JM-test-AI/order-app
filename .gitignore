@@ -1,0 +1,80 @@
+# 프로젝트 루트 .gitignore
+
+# 환경 변수 파일
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+
+# 의존성 폴더
+node_modules/
+**/node_modules/
+
+# 로그 파일
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 운영 체제 파일
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# IDE 및 에디터 설정
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# 빌드 결과물
+dist/
+build/
+*.tsbuildinfo
+.next/
+out/
+.nuxt/
+.cache/
+
+# 테스트 커버리지
+coverage/
+*.lcov
+.nyc_output/
+
+# 임시 파일
+*.tmp
+*.temp
+.cache/
+.temp/
+
+# 패키지 매니저 락 파일 (선택사항 - 팀 정책에 따라)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# 데이터베이스 파일 (로컬 개발용)
+*.sqlite
+*.sqlite3
+*.db
+
+# 기타
+*.pid
+*.seed
+*.pid.lock
+
