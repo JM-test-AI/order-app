@@ -19,7 +19,14 @@ app.get('/', (req, res) => {
   });
 });
 
-// API 라우트 (추후 추가 예정)
+// 라우터 등록 (404 핸들러 전에 등록해야 함)
+const menusRouter = require('./routes/menus');
+const ordersRouter = require('./routes/orders');
+
+app.use('/api/menus', menusRouter);
+app.use('/api/orders', ordersRouter);
+
+// API 라우트
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,

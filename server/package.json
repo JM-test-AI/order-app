@@ -6,7 +6,9 @@
   "type": "commonjs",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "db:create": "node db/create-database.js",
+    "db:init": "node db/init.js"
   },
   "keywords": [
     "express",

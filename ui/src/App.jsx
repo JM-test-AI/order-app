@@ -1,57 +1,49 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
-
-// 임시 메뉴 데이터
-const initialMenus = [
-  {
-    id: 1,
-    name: '아메리카노(ICE)',
-    price: 4000,
-    description: '시원한 아이스 아메리카노',
-    image: null
-  },
-  {
-    id: 2,
-    name: '아메리카노(HOT)',
-    price: 4000,
-    description: '따뜻한 핫 아메리카노',
-    image: null
-  },
-  {
-    id: 3,
-    name: '카페라떼',
-    price: 5000,
-    description: '부드러운 카페라떼',
-    image: null
-  },
-  {
-    id: 4,
-    name: '카푸치노',
-    price: 5000,
-    description: '진한 에스프레소와 우유 거품',
-    image: null
-  },
-  {
-    id: 5,
-    name: '바닐라라떼',
-    price: 5500,
-    description: '달콤한 바닐라 시럽이 들어간 라떼',
-    image: null
-  },
-  {
-    id: 6,
-    name: '카라멜마키아토',
-    price: 6000,
-    description: '카라멜 시럽과 에스프레소',
-    image: null
-  }
-]
+import { menuAPI, orderAPI } from './api'
 
 function App() {
-  const [menus, setMenus] = useState(initialMenus.map(menu => ({ ...menu, stock: 10 })))
+  const [menus, setMenus] = useState([])
   const [cart, setCart] = useState([])
   const [currentPage, setCurrentPage] = useState('order')
   const [orders, setOrders] = useState([]) // 주문 목록
+  const [loading, setLoading] = useState(true)
+
+  // 메뉴 목록 불러오기
+  useEffect(() => {
+    loadMenus()
+  }, [])
+
+  // 주문 목록 불러오기 (관리자 화면)
+  useEffect(() => {
+    if (currentPage === 'admin') {
+      loadMenus() // 재고 현황을 위해 메뉴도 불러오기
+      loadOrders()
+    }
+  }, [currentPage])
+
+  const loadMenus = async () => {
+    try {
+      setLoading(true)
+      const menusData = await menuAPI.getMenus()
+      setMenus(menusData)
+    } catch (error) {
+      console.error('메뉴 목록 로딩 실패:', error)
+      alert('메뉴 목록을 불러오는데 실패했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadOrders = async () => {
+    try {
+      const ordersData = await orderAPI.getOrders('received,preparing')
+      setOrders(ordersData)
+    } catch (error) {
+      console.error('주문 목록 로딩 실패:', error)
+      alert('주문 목록을 불러오는데 실패했습니다.')
+    }
+  }
 
   // 메뉴를 장바구니에 추가
   const addToCart = (menu, options) => {
@@ -149,87 +141,69 @@ function App() {
   const totalAmount = cart.reduce((sum, item) => sum + (item.totalPrice * item.quantity), 0)
 
   // 주문하기
-  const handleOrder = () => {
+  const handleOrder = async () => {
     if (cart.length === 0) {
       alert('장바구니가 비어있습니다.')
       return
     }
 
-    // 재고 검증
-    const stockIssues = []
-    cart.forEach(item => {
-      const menu = menus.find(m => m.id === item.menuId)
-      if (!menu) {
-        stockIssues.push(`${item.name}: 메뉴를 찾을 수 없습니다.`)
-      } else if (menu.stock < item.quantity) {
-        stockIssues.push(`${item.name}: 재고 부족 (요청: ${item.quantity}개, 재고: ${menu.stock}개)`)
+    try {
+      // 주문 데이터 준비
+      const orderItems = cart.map(item => ({
+        menuId: item.menuId,
+        menuName: item.name,
+        quantity: item.quantity,
+        options: item.options,
+        unitPrice: item.totalPrice,
+        totalPrice: item.totalPrice * item.quantity
+      }))
+
+      const orderData = {
+        items: orderItems,
+        totalAmount: totalAmount
       }
-    })
 
-    if (stockIssues.length > 0) {
-      alert(`주문할 수 없습니다:\n${stockIssues.join('\n')}`)
-      return
+      // API 호출
+      await orderAPI.createOrder(orderData)
+
+      // 성공 시 메뉴 목록 새로고침 (재고 업데이트 반영)
+      await loadMenus()
+
+      alert(`주문이 완료되었습니다!\n총 금액: ${totalAmount.toLocaleString()}원`)
+      setCart([])
+    } catch (error) {
+      console.error('주문 생성 실패:', error)
+      if (error.message.includes('재고 부족')) {
+        // 재고 부족 에러는 서버에서 상세 정보를 받아서 표시
+        alert(error.message)
+      } else {
+        alert('주문 생성에 실패했습니다. 다시 시도해주세요.')
+      }
     }
-
-    // 주문 생성
-    const orderItems = cart.map(item => ({
-      menuId: item.menuId,
-      name: item.name,
-      optionText: item.optionText,
-      quantity: item.quantity,
-      price: item.totalPrice
-    }))
-
-    const newOrder = {
-      id: Date.now(),
-      date: new Date(),
-      items: orderItems,
-      totalAmount: totalAmount,
-      status: 'received' // 'received', 'preparing', 'completed'
-    }
-
-    setOrders([...orders, newOrder])
-    
-    // 재고 일괄 차감 (성능 개선)
-    setMenus(prevMenus => {
-      const stockMap = new Map()
-      cart.forEach(item => {
-        const current = stockMap.get(item.menuId) || 0
-        stockMap.set(item.menuId, current + item.quantity)
-      })
-
-      return prevMenus.map(menu => {
-        const quantityToDeduct = stockMap.get(menu.id) || 0
-        return quantityToDeduct > 0
-          ? { ...menu, stock: Math.max(0, menu.stock - quantityToDeduct) }
-          : menu
-      })
-    })
-
-    alert(`주문이 완료되었습니다!\n총 금액: ${totalAmount.toLocaleString()}원`)
-    setCart([])
   }
 
   // 재고 업데이트
-  const updateStock = (menuId, change) => {
-    setMenus(prevMenus => 
-      prevMenus.map(menu => 
-        menu.id === menuId 
-          ? { ...menu, stock: Math.max(0, menu.stock + change) }
-          : menu
-      )
-    )
+  const updateStock = async (menuId, change) => {
+    try {
+      await menuAPI.updateStock(menuId, change)
+      // 메뉴 목록 새로고침
+      await loadMenus()
+    } catch (error) {
+      console.error('재고 업데이트 실패:', error)
+      alert('재고 수정에 실패했습니다.')
+    }
   }
 
   // 주문 상태 업데이트
-  const updateOrderStatus = (orderId, newStatus) => {
-    setOrders(prevOrders => 
-      prevOrders.map(order => 
-        order.id === orderId 
-          ? { ...order, status: newStatus }
-          : order
-      )
-    )
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      await orderAPI.updateOrderStatus(orderId, newStatus)
+      // 주문 목록 새로고침
+      await loadOrders()
+    } catch (error) {
+      console.error('주문 상태 업데이트 실패:', error)
+      alert('주문 상태 변경에 실패했습니다.')
+    }
   }
 
   return (
@@ -238,13 +212,19 @@ function App() {
       <div className="main-content">
         {currentPage === 'order' && (
           <>
-            <div className="menu-section">
-              <div className="menu-grid">
-                {menus.map(menu => (
-                  <MenuCard key={menu.id} menu={menu} onAddToCart={addToCart} stock={menu.stock} />
-                ))}
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                메뉴를 불러오는 중...
               </div>
-            </div>
+            ) : (
+              <div className="menu-section">
+                <div className="menu-grid">
+                  {menus.map(menu => (
+                    <MenuCard key={menu.id} menu={menu} onAddToCart={addToCart} stock={menu.stock} />
+                  ))}
+                </div>
+              </div>
+            )}
             <Cart 
               cart={cart}
               onRemove={removeFromCart}
@@ -403,7 +383,6 @@ function Cart({ cart, onRemove, onIncrease, onDecrease, totalAmount, onOrder }) 
                     >
                       -
                     </button>
-                    <span className="quantity">{item.quantity}</span>
                     <button 
                       className="quantity-btn"
                       onClick={() => onIncrease(item.id)}
@@ -528,7 +507,7 @@ function AdminDashboard({ menus, orders, onUpdateStock, onUpdateOrderStatus }) {
         ) : (
           <div className="orders-list">
             {activeOrders.map(order => {
-              const orderDate = new Date(order.date)
+              const orderDate = new Date(order.orderDate)
               const month = orderDate.getMonth() + 1
               const day = orderDate.getDate()
               const hours = orderDate.getHours()
@@ -542,7 +521,7 @@ function AdminDashboard({ menus, orders, onUpdateStock, onUpdateOrderStatus }) {
                     <div className="order-items">
                       {order.items.map((item, idx) => (
                         <span key={idx} className="order-item-name">
-                          {item.name}{item.optionText} x {item.quantity}
+                          {item.menuName}{item.optionText} x {item.quantity}
                         </span>
                       ))}
                     </div>
