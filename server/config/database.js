@@ -2,19 +2,34 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 // PostgreSQL 연결 풀 생성
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'order_app',
-  user: process.env.DB_USER || 'postgres',
-  max: 20, // 최대 연결 수
-  idleTimeoutMillis: 30000, // 유휴 연결 타임아웃
-  connectionTimeoutMillis: 2000, // 연결 타임아웃
-};
+// Render.com에서는 DATABASE_URL 환경 변수를 사용할 수 있습니다
+let dbConfig;
 
-// 비밀번호가 설정되어 있고 빈 문자열이 아닐 때만 추가
-if (process.env.DB_PASSWORD && process.env.DB_PASSWORD.trim() !== '') {
-  dbConfig.password = process.env.DB_PASSWORD;
+if (process.env.DATABASE_URL) {
+  // Render.com의 Internal Database URL 사용
+  dbConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  };
+} else {
+  // 개별 환경 변수 사용 (로컬 개발)
+  dbConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5432,
+    database: process.env.DB_NAME || 'order_app',
+    user: process.env.DB_USER || 'postgres',
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  };
+
+  // 비밀번호가 설정되어 있고 빈 문자열이 아닐 때만 추가
+  if (process.env.DB_PASSWORD && process.env.DB_PASSWORD.trim() !== '') {
+    dbConfig.password = process.env.DB_PASSWORD;
+  }
 }
 
 const pool = new Pool(dbConfig);
