@@ -8,7 +8,8 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "db:create": "node db/create-database.js",
-    "db:init": "node db/init.js"
+    "db:init": "node db/init.js",
+    "db:update-images": "node db/update-images.js"
   },
   "keywords": [
     "express",
