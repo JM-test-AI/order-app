@@ -25,11 +25,14 @@ function App() {
   const loadMenus = async () => {
     try {
       setLoading(true)
+      console.log('메뉴 목록 로딩 시작...')
       const menusData = await menuAPI.getMenus()
+      console.log('메뉴 목록 로딩 성공:', menusData.length, '개')
       setMenus(menusData)
     } catch (error) {
       console.error('메뉴 목록 로딩 실패:', error)
-      alert('메뉴 목록을 불러오는데 실패했습니다.')
+      const errorMessage = error.message || '알 수 없는 오류가 발생했습니다.'
+      alert(`메뉴 목록을 불러오는데 실패했습니다.\n\n오류: ${errorMessage}\n\n브라우저 콘솔을 확인하세요.`)
     } finally {
       setLoading(false)
     }
