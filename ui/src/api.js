@@ -46,17 +46,31 @@ async function apiCall(endpoint, options = {}) {
     return data;
   } catch (error) {
     // 네트워크 오류와 서버 오류 구분
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+    if (error.name === 'TypeError' && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
       console.error('네트워크 오류:', error);
-      throw new Error(`서버에 연결할 수 없습니다. API URL을 확인하세요: ${API_BASE_URL}`);
+      const errorMsg = `서버에 연결할 수 없습니다.\n\n가능한 원인:\n1. 백엔드 서버가 실행 중이 아닙니다\n2. API URL이 잘못 설정되었습니다\n3. CORS 오류가 발생했습니다\n\n현재 API URL: ${API_BASE_URL}`;
+      throw new Error(errorMsg);
+    }
+    
+    // AbortError (타임아웃 등)
+    if (error.name === 'AbortError') {
+      console.error('요청 타임아웃:', error);
+      throw new Error('서버 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.');
     }
     
     console.error('API 호출 오류:', {
       url,
-      error: error.message,
+      errorName: error.name,
+      errorMessage: error.message,
       stack: error.stack
     });
-    throw error;
+    
+    // 이미 Error 객체인 경우 그대로 throw, 아니면 새로 생성
+    if (error instanceof Error) {
+      throw error;
+    } else {
+      throw new Error(error.message || '알 수 없는 오류가 발생했습니다.');
+    }
   }
 }
 

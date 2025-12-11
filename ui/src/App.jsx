@@ -31,8 +31,21 @@ function App() {
       setMenus(menusData)
     } catch (error) {
       console.error('메뉴 목록 로딩 실패:', error)
-      const errorMessage = error.message || '알 수 없는 오류가 발생했습니다.'
-      alert(`메뉴 목록을 불러오는데 실패했습니다.\n\n오류: ${errorMessage}\n\n브라우저 콘솔을 확인하세요.`)
+      console.error('오류 상세:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      })
+      
+      // 더 친화적인 에러 메시지
+      let errorMessage = error.message || '알 수 없는 오류가 발생했습니다.'
+      
+      // "Load failed" 같은 일반적인 메시지를 더 구체적으로 변경
+      if (errorMessage.includes('Load failed') || errorMessage.includes('Failed to fetch')) {
+        errorMessage = `서버에 연결할 수 없습니다.\n\n확인 사항:\n1. 백엔드 서버가 실행 중인지 확인\n2. API URL 설정 확인\n3. 브라우저 콘솔의 상세 오류 확인`
+      }
+      
+      alert(`메뉴 목록을 불러오는데 실패했습니다.\n\n${errorMessage}\n\n브라우저 개발자 도구(F12)의 Console 탭에서 상세 오류를 확인하세요.`)
     } finally {
       setLoading(false)
     }
