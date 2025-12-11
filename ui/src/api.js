@@ -5,6 +5,38 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 console.log('API Base URL:', API_BASE_URL);
 console.log('환경 변수 VITE_API_URL:', import.meta.env.VITE_API_URL || '설정 안됨');
 
+// 재시도 함수 (Render 무료 플랜의 서버 시작 시간 고려)
+async function fetchWithRetry(url, options = {}, maxRetries = 2, delay = 3000) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      // 타임아웃 설정 (90초 - Render 무료 플랜 서버 시작 시간 고려)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 90000);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers
+        },
+        signal: controller.signal,
+        ...options
+      });
+      
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      // 마지막 시도가 아니고 타임아웃/네트워크 오류인 경우 재시도
+      if (i < maxRetries - 1 && (error.name === 'AbortError' || error.message.includes('fetch') || error.message.includes('Load failed'))) {
+        console.log(`API 호출 실패, ${delay/1000}초 후 재시도... (${i + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 1.5; // 지수 백오프
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
 // API 호출 헬퍼 함수
 async function apiCall(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -12,13 +44,7 @@ async function apiCall(endpoint, options = {}) {
   try {
     console.log('API 호출:', url, options.method || 'GET');
     
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-      },
-      ...options
-    });
+    const response = await fetchWithRetry(url, options);
 
     // 응답이 JSON이 아닐 수 있으므로 확인
     let data;

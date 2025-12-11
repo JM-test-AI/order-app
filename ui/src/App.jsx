@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import { menuAPI, orderAPI } from './api'
 
+// API URL을 에러 메시지에서 사용하기 위해 export
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+
 function App() {
   const [menus, setMenus] = useState([])
   const [cart, setCart] = useState([])
@@ -40,9 +43,9 @@ function App() {
       // 더 친화적인 에러 메시지
       let errorMessage = error.message || '알 수 없는 오류가 발생했습니다.'
       
-      // "Load failed" 같은 일반적인 메시지를 더 구체적으로 변경
-      if (errorMessage.includes('Load failed') || errorMessage.includes('Failed to fetch')) {
-        errorMessage = `서버에 연결할 수 없습니다.\n\n확인 사항:\n1. 백엔드 서버가 실행 중인지 확인\n2. API URL 설정 확인\n3. 브라우저 콘솔의 상세 오류 확인`
+      // 타임아웃 오류인 경우
+      if (errorMessage.includes('Load failed') || errorMessage.includes('Failed to fetch') || errorMessage.includes('초과')) {
+        errorMessage = `서버 응답 시간이 초과되었습니다.\n\nRender 무료 플랜의 경우:\n1. 서버가 sleep 상태일 수 있습니다 (15분 비활성 시)\n2. 첫 요청 시 약 30-60초 소요될 수 있습니다\n3. 잠시 후 다시 시도해주세요\n\n또는 백엔드 서버 상태를 확인하세요:\n${API_BASE_URL.replace('/api', '/api/health')}`
       }
       
       alert(`메뉴 목록을 불러오는데 실패했습니다.\n\n${errorMessage}\n\n브라우저 개발자 도구(F12)의 Console 탭에서 상세 오류를 확인하세요.`)
