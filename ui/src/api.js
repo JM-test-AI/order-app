@@ -1,10 +1,9 @@
 // API 기본 URL (환경 변수 또는 기본값)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-// 디버깅: API URL 확인 (개발 환경에서만)
-if (import.meta.env.DEV) {
-  console.log('API Base URL:', API_BASE_URL);
-}
+// 디버깅: API URL 확인 (항상 표시)
+console.log('API Base URL:', API_BASE_URL);
+console.log('환경 변수 VITE_API_URL:', import.meta.env.VITE_API_URL || '설정 안됨');
 
 // API 호출 헬퍼 함수
 async function apiCall(endpoint, options = {}) {
